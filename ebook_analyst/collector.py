@@ -24,7 +24,7 @@ def collect_deliverables(
     - JSON 自动转换为 .md
 
     参数:
-        output_dir: 分析输出目录（如 output/额尔古纳河右岸/）
+        output_dir: 分析输出目录（如 /path/to/山河纪事/）
         target_dir: 目标收集目录（默认为 output_dir/deliverables/）
         clean: 是否先清空目标目录
 

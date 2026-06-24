@@ -5,8 +5,8 @@
 自动将 JSON 分析文件转换为 Markdown。
 
 用法:
-    python scripts/collect_deliverables.py output/<book_name>
-    python scripts/collect_deliverables.py output/<book_name> --target ./my_report
+    python scripts/collect_deliverables.py <book_dir>
+    python scripts/collect_deliverables.py <book_dir> --target ./my_report
 """
 
 import sys
@@ -24,7 +24,7 @@ def main():
         description="收集分析成品（.png + .md）到统一目录"
     )
     parser.add_argument(
-        "output_dir", type=str, help="分析输出目录 (如 output/额尔古纳河右岸/)"
+        "output_dir", type=str, help="分析输出目录 (如 /path/to/山河纪事/)"
     )
     parser.add_argument(
         "--target",

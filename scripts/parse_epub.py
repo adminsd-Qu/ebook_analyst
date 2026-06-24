@@ -6,7 +6,7 @@
 
 示例:
     python scripts/parse_epub.py "我的书.epub"
-    python scripts/parse_epub.py "我的书.epub" --output output/我的书
+    python scripts/parse_epub.py "我的书.epub" --output ./我的分析输出
 """
 
 import sys
@@ -32,7 +32,7 @@ def main():
         "-o",
         type=str,
         default=None,
-        help="输出目录 (默认: output/<书名>)",
+        help="输出目录 (默认: EPUB 同目录下的 <书名>/)",
     )
     args = parser.parse_args()
 
@@ -49,12 +49,12 @@ def main():
     reader = EpubReader(epub_path)
     data = reader.extract_all()
 
-    # 确定输出路径
+    # 确定输出路径 (默认: EPUB 同目录)
     if args.output:
         output_dir = Path(args.output)
     else:
         safe_name = data["title"].replace("/", "_").replace("\\", "_")
-        output_dir = Path("output") / safe_name
+        output_dir = epub_path.resolve().parent / safe_name
 
     output_dir.mkdir(parents=True, exist_ok=True)
     data_dir = output_dir / "data"
@@ -64,7 +64,7 @@ def main():
     reader.save_json(json_path)
 
     print(f"书名: {data['title']} | 作者: {data['author']} | 字数: {data['total_chars']:,} | 章节: {data['chapter_count']}")
-    print(f"输出: {json_path.resolve().relative_to(_PROJECT_ROOT)}")
+    print(f"输出: {json_path.resolve()}")
 
 
 if __name__ == "__main__":

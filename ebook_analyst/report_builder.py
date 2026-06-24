@@ -13,7 +13,7 @@ def build_report(
     """组装最终的 Markdown 分析报告。
 
     参数:
-        output_dir: 分析输出目录 (如 output/额尔古纳河右岸/)
+        output_dir: 分析输出目录 (如 /path/to/山河纪事/)
         token_stats: Token 消耗统计列表 [{"stage": "解析", "input": 0, "output": 0}, ...]
 
     返回:

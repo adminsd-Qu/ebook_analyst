@@ -1,6 +1,6 @@
 # ebook_analyst — 本地 EPUB 电子书智能分析工具
 
-[English](#english) | 中文
+[English](README_ENG.md) | 中文
 
 将 EPUB 电子书自动解析为结构化数据，结合 Python 机械处理与 Claude 智能分析，生成包含**词云、逐章详解、主题分析、专题总结**等维度的完整深度分析报告。
 
@@ -19,29 +19,34 @@
 | 👥 人物关系图 | 共现网络分析 | Python (networkx) |
 | 📄 报告组装 | Markdown 报告 + Token 统计 | Python |
 
-## 快速开始
+## 快速开始（Windows环境）
 
 ```bash
 # 1. 安装依赖
 pip install -r requirements.txt
 
-# 2. 解析 EPUB
-python scripts/parse_epub.py "path of name.epub"
+# 2. 解析 EPUB（输出默认到 EPUB 同目录）
+python scripts\parse_epub.py "D:\books\山河纪事.epub" # 引用改为你的epub文件地址
+# → 输出到 D:\books\山河纪事\
 
 # 3. 提取关键词
-python scripts/keyword_extract.py output/<书名>/data/book.json
+python scripts\keyword_extract.py D:\books\山河纪事\data\book.json
+#                                 ^^^^^^^^^^^^^^^^^
+#                           这是上一条指令创建的输出文件夹的路径，后面添加“\data\book.json”
 
 # 4. 生成词云
-python scripts/wordcloud_gen.py output/<书名>/data/book.json
-python scripts/wordcloud_gen.py output/<书名>/data/book.json --mode chapters
+python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json
+python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json --mode chapters
+#                                 ^^^^^^^^^^^^^^^^^
+#                                       同上
 
 # 5. 启动 Claude 深度分析（在 Claude Code 中说）
-#    "分析 output/<书名>"
-#    或 "/ebook-analyst"调用这个skill。
+#    "分析 D:\books\山河纪事"
+#    或 "/ebook-analyst" 调用此 Skill
 ```
 
 ```bash
-# 您也可以直接在claude code中引用本脚本路径，发送您的.epub文件路径并调用此功能开始分析。
+# 您也可以直接在 Claude Code 中引用本脚本路径，发送您的 .epub 文件路径并调用此功能开始分析（建议，命令行操作改目录比较麻烦）。
 ```
 
 ## 完整工作流
@@ -97,43 +102,36 @@ ebook_analyst/
 │   ├── wordcloud_gen.py            # → PNG 词云
 │   └── collect_deliverables.py     # → 收集成品
 │
-├── output/                         # 分析输出 (gitignore)
-│   └── <书名>/
-│       ├── report.md
-│       ├── wordcloud_*.png
-│       ├── data/ (book.json, keywords.json, themes.json...)
-│       └── deliverables/ (整理后的成品目录)
-│
 └── temp/                           # EPUB 解压缓存 (gitignore)
 ```
 
 ## Claude Code Skill 交互式流程
 
-整个分析流程设计为**交互式、逐步推进**。每阶段完成后，Skill 会：
+整个分析流程在**逐章深读（阶段 2）完成后暂停一次**，其余阶段自动推进：
 
-1. 报告已完成的操作和输出文件
-2. 说明下一步将做什么
-3. **询问用户是否继续**（"继续"/"下一步"推进，"停止"/"整理"收集成品）
+1. 阶段 0-1 自动执行（解析 + 关键词 + 词云）
+2. 阶段 2 逐章深读完成后暂停，输出成果汇报 + 主动提出 2-3 条额外分析建议
+3. 用户回复"继续" → 阶段 3→4→5 一气呵成，不再暂停
+4. 用户提出额外需求 → 完成需求后再次询问是否生成报告
+5. 随时说"停止"或"整理" → 收集已完成的成品
 
 ### 阶段一览
 
-| 阶段 | 内容 | 实现 |
-|------|------|------|
-| 0 — 启动 | 解析 EPUB，确定分析策略 | Python |
-| 1 — 机械提取 | 关键词 + 词云生成 | Python |
-| 2 — 逐章深读 | 每章深度文学分析 | Claude |
-| 3 — 跨章统整 | 主题分析 + 专题总结 | Claude |
-| 4 — 报告组装 | 专题词云 + 最终报告 | Python |
-| 5 — 整理成品 | JSON→MD + 收集到 deliverables/ | Python |
-
-随时说"停止"或"整理"，即可将已完成的分析产物收集到统一目录。
+| 阶段 | 内容 | 实现 | 交互 |
+|------|------|------|------|
+| 0 — 启动 | 解析 EPUB，确定分析策略 | Python | 自动 |
+| 1 — 机械提取 | 关键词 + 词云生成 | Python | 自动 |
+| 2 — 逐章深读 | 每章深度文学分析 | Claude | ⭐ 暂停询问 |
+| 3 — 跨章统整 | 主题分析 + 专题总结 | Claude | 自动 |
+| 4 — 报告组装 | 专题词云 + 最终报告 | Python | 自动 |
+| 5 — 整理成品 | JSON→MD + 收集到 deliverables\ | Python | 自动 |
 
 ## 整理成品
 
 ```bash
-# 将所有 .png 和 .md 收集到 deliverables/ 目录
+# 将所有 .png 和 .md 收集到 deliverables\ 目录
 # 自动将 JSON 分析文件转换为 Markdown
-python scripts/collect_deliverables.py output/<书名>
+python scripts\collect_deliverables.py D:\books\山河纪事
 ```
 
 成品目录包含：
@@ -150,23 +148,13 @@ python scripts/collect_deliverables.py output/<书名>
 ### 人物关系图
 
 ```bash
-python -c "
-from ebook_analyst.character_network import generate_character_network
-generate_character_network(
-    'output/<书名>/data/book.json',
-    ['人物1', '人物2', '人物3', ...],
-    'output/<书名>/character_network.png',
-    min_edge_weight=2
-)
-"
+python -c "from ebook_analyst.character_network import generate_character_network; generate_character_network('D:\\books\\山河纪事\\data\\book.json', ['人物1', '人物2', '人物3'], 'D:\\books\\山河纪事\\character_network.png', min_edge_weight=2)"
 ```
 
 ### 专题词云（需先完成主题分析）
 
 ```bash
-python scripts/wordcloud_gen.py output/<书名>/data/book.json \
-    --mode themes \
-    --themes output/<书名>/data/themes.json
+python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json --mode themes --themes D:\books\山河纪事\data\themes.json
 ```
 
 ## 依赖
@@ -180,34 +168,25 @@ python scripts/wordcloud_gen.py output/<书名>/data/book.json \
 
 ## 示例输出
 
-对迟子建《额尔古纳河右岸》(169,696 字) 的分析产出：
+对陈墨《山河纪事》(约 180,000 字) 的分析产出：
 
 | 文件 | 大小 | 说明 |
 |------|------|------|
-| report.md | 44 KB | 完整分析报告 (386 行) |
-| chapters_analysis.md | 19 KB | 4 章逐章详解 |
+| report.md | 44 KB | 完整分析报告 (约 400 行) |
+| chapters_analysis.md | 19 KB | 6 章逐章详解 |
 | themes.md | 11 KB | 5 大主题分析 |
 | keywords.md | 6 KB | TF-IDF/TextRank 关键词 |
 | wordcloud_full.png | 294 KB | 全书词云 |
-| wordcloud_ch5~8.png | 280-293 KB | 4 张逐章词云 |
+| wordcloud_ch1~6.png | 280-293 KB | 6 张逐章词云 |
 | wordcloud_topic_*.png | 5 张 | 5 张专题词云 |
-| character_network.png | 358 KB | 16 人关系网络图 |
+| character_network.png | 358 KB | 12 人关系网络图 |
 | **总计** | **~3 MB** | **15 个成品文件** |
 
 ### 识别的五大主题
 
-1. **生死循环与萨满信仰** — 妮浩以命换命的牺牲
-2. **传统文明与现代性的冲突** — 百年挤压下的文化消散
-3. **记忆、讲述与文学救赎** — 故事作为抵抗遗忘的容器
-4. **女性命运与民族史诗** — 以女性声音讲述的哀歌式民族志
-5. **人与自然：鄂温克式的生态伦理** — 与驯鹿、河流、森林的共生哲学
+1. **家族兴衰与历史变迁** — 三代人的命运与百年中国的激荡
+2. **个人理想与时代洪流** — 知识分子的坚守与妥协
+3. **乡土记忆与文化认同** — 离散、回归与精神家园的重建
+4. **爱情与命运的纠缠** — 战乱中的离合悲欢
+5. **传统工艺的传承与消亡** — 匠人精神的最后守望
 
----
-
-## English
-
-A local EPUB ebook analysis tool. Python handles mechanical tasks (EPUB parsing, jieba tokenization, word cloud generation), while Claude performs deep literary analysis (chapter-by-chapter close reading, theme identification, thematic synthesis). Output is a comprehensive Markdown report with embedded PNG figures.
-
-**Quick start**: `pip install -r requirements.txt` → `python scripts/parse_epub.py <file.epub>` → say "analyze this book" in Claude Code.
-
-**Interactive workflow**: Each stage completes with a prompt asking whether to continue. Say "stop" or "整理" at any point to collect all deliverables (.png + .md) into a single directory.

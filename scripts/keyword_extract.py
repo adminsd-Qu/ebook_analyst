@@ -66,7 +66,7 @@ def main():
     )
 
     print(f"关键词: 整体{len(result['overall_keywords'])}个, 高频{len(result['top_frequent_words'])}个, 逐章{len(result['chapter_keywords'])}章")
-    print(f"输出: {output_path.resolve().relative_to(_PROJECT_ROOT)}")
+    print(f"输出: {output_path.resolve()}")
 
 
 if __name__ == "__main__":

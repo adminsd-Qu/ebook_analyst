@@ -68,7 +68,7 @@ def main():
             output_dir / "wordcloud_full.png",
             max_words=args.max_words,
         )
-        print(f"输出: {path.resolve().relative_to(_PROJECT_ROOT)}")
+        print(f"输出: {path.resolve()}")
 
     elif args.mode == "chapters":
         print(f"逐章词云 ({len(chapters)} 章)...")
@@ -77,8 +77,8 @@ def main():
             output_dir,
             max_words=args.max_words,
         )
-        first_rel = paths[0].resolve().relative_to(_PROJECT_ROOT) if paths else 'none'
-        last_rel = paths[-1].resolve().relative_to(_PROJECT_ROOT) if len(paths) > 1 else ''
+        first_rel = str(paths[0].resolve()) if paths else 'none'
+        last_rel = str(paths[-1].resolve()) if len(paths) > 1 else ''
         print(f"生成 {len(paths)} 个: {first_rel} ... {last_rel}")
 
     elif args.mode == "themes":
@@ -99,7 +99,7 @@ def main():
             output_dir,
             max_words=args.max_words,
         )
-        first_rel = paths[0].resolve().relative_to(_PROJECT_ROOT) if paths else 'none'
+        first_rel = str(paths[0].resolve()) if paths else 'none'
         print(f"生成 {len(paths)} 个: {first_rel} ...")
 
 

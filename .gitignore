@@ -1,9 +1,6 @@
 # EPUB 解析临时文件
 temp/
 
-# 分析输出
-output/
-
 # Python
 __pycache__/
 *.pyc

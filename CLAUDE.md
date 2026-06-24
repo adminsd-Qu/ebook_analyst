@@ -8,11 +8,11 @@ EPUB ebook analysis tool. Python scripts handle mechanical tasks (EPUB parsing, 
 
 ## Architecture: three layers
 
-scripts/ (CLI) → ebook_analyst/ (library) → output/<book>/ (artifacts + data + deliverables)
+scripts/ (CLI) → ebook_analyst/ (library) → <epub_dir>/<book>/ (artifacts + data + deliverables)
 
 - **`ebook_analyst/`**: importable library. Core logic lives here.
 - **`scripts/`**: CLI entry points. Each starts with `sys.path.insert(0, _PROJECT_ROOT)` so they can import `ebook_analyst` without `pip install`.
-- **`output/`**: all generated artifacts. Gitignored. Subdirectory per book.
+- **`<epub_dir>/<book>/`**: output directory. Defaults to EPUB 文件所在目录下的 `<书名>/` 子目录。
 
 ## Data flow and intermediate formats
 
@@ -28,10 +28,10 @@ All commands and the interactive analysis workflow are in SKILL.md. Quick refere
 
 ```bash
 pip install -r requirements.txt
-python scripts/parse_epub.py <file.epub>
-python scripts/keyword_extract.py output/<book>/data/book.json
-python scripts/wordcloud_gen.py output/<book>/data/book.json [--mode chapters|themes]
-python scripts/collect_deliverables.py output/<book>
+python scripts\parse_epub.py <file.epub>                         # 输出到 EPUB 同目录
+python scripts\keyword_extract.py <book_dir>\data\book.json
+python scripts\wordcloud_gen.py <book_dir>\data\book.json [--mode chapters|themes]
+python scripts\collect_deliverables.py <book_dir>
 ```
 
 ## Module quick reference
