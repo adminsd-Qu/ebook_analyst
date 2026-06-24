@@ -1,0 +1,21 @@
+# EPUB 解析临时文件
+temp/
+
+# 分析输出
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

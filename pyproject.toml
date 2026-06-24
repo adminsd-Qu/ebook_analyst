@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "ebook_analyst"
+version = "0.1.0"
+description = "本地 EPUB 电子书智能分析工具 — 词云、逐章详解、主题分析、专题总结"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+include = ["ebook_analyst*"]
+
+[project.scripts]
+parse-epub = "scripts.parse_epub:main"
