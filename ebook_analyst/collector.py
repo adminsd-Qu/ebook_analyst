@@ -52,6 +52,19 @@ def collect_deliverables(
         md_paths = convert_all(data_dir, target_dir, verbose=verbose)
         collected.extend(md_paths)
 
+    # 1.5 收集逐章独立分析报告
+    if data_dir.exists():
+        ch_reports = sorted(data_dir.glob("ch_*_analysis.md"))
+        if ch_reports:
+            if verbose:
+                print("[收集逐章分析报告]")
+            for ch_md in ch_reports:
+                dest = target_dir / ch_md.name
+                shutil.copy2(ch_md, dest)
+                collected.append(dest)
+                if verbose:
+                    print(f"  {ch_md.name}")
+
     # 2. 收集根目录下的 .md 文件
     if verbose:
         print("[收集 .md 文件]")
