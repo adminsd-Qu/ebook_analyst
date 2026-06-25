@@ -1,6 +1,6 @@
 """词云生成器 — 支持全书、逐章、专题三种模式。
 
-自动检测并配置中文字体，确保中文渲染正常。
+自动检测并配置中文字体（项目内 fonts/ 优先于系统字体），确保中文渲染正常。
 """
 
 import json
@@ -16,22 +16,17 @@ from wordcloud import WordCloud
 
 from ebook_analyst.text_processor import segment
 
+# 项目内 fonts/ 目录（与当前文件同级）
+_PROJECT_FONTS_DIR = Path(__file__).parent / "fonts"
+
 
 def _find_chinese_font() -> str:
-    """自动检测系统中可用的中文字体路径。"""
-    # Windows 字体路径和优先级
-    font_dir = Path("C:/Windows/Fonts")
-    candidates = [
-        font_dir / "msyhbd.ttc",    # 微软雅黑粗体
-        font_dir / "STKAITI.TTF",   # 华文楷体
-        font_dir / "STZHONGS.TTF",  # 华文中宋
-    ]
+    """自动检测可用的中文字体路径（统一从项目 fonts/ 读取）。"""
+    project_fonts = sorted(_PROJECT_FONTS_DIR.glob("*.ttf")) + sorted(_PROJECT_FONTS_DIR.glob("*.ttc"))
+    if project_fonts:
+        return str(project_fonts[0])
 
-    for font_path in candidates:
-        if font_path.exists():
-            return str(font_path)
-
-    # Linux / macOS 回退
+    # 回退：matplotlib 系统字体扫描（Linux/macOS 场景）
     import matplotlib.font_manager as fm
 
     for f in fm.fontManager.ttflist:
@@ -41,9 +36,8 @@ def _find_chinese_font() -> str:
         ):
             return f.fname
 
-    # 最终回退
     print("警告: 未找到任何中文字体，词云可能无法正常显示中文。")
-    return str(font_dir / "msyhbd.ttc")
+    return str(_PROJECT_FONTS_DIR / "msyhbd.ttc")
 
 
 _FONT_PATH: Optional[str] = None
@@ -104,9 +98,14 @@ def _load_font_map() -> dict[str, dict[str, str]]:
 
 
 _FONT_NAME_MAP_FALLBACK = {
-    "msyhbd":    "msyhbd.ttc",
-    "stkaiti":   "STKAITI.TTF",
-    "stzhongs":  "STZHONGS.TTF",
+    "msyhbd":          "微软雅黑粗体.TTF",
+    "stkaiti":         "华文楷体.TTF",
+    "stzhongs":        "华文中宋.TTF",
+    "hanyichengxing":  "汉仪程行简.ttf",
+    "hukangxingkai":   "华康行楷体 W5.ttf",
+    "mengmiao":        "三极萌喵简体.ttf",
+    "xiquemeihua":     "喜鹊梅花楷简繁(字跳网络企业版).ttf",
+    "zihunguizhou":    "字魂贵州省博物馆联名体.ttf",
 }
 
 # 字体完整信息（优先从 README 解析，回退硬编码）
@@ -121,22 +120,21 @@ _FONT_NAME_MAP: dict[str, str] = (
 
 
 def resolve_font_path(name: str) -> str:
-    """根据字体简称解析为完整路径。
+    """根据字体简称解析为完整路径（统一从项目 fonts/ 读取）。
 
     参数:
-        name: 字体简称（如 "msyhbd", "stkaiti", "stzhongs"）
+        name: 字体简称（如 "msyhbd", "stkaiti", "mengmiao"）
 
     返回:
         字体文件的绝对路径，找不到时回退到默认字体
     """
-    font_dir = Path("C:/Windows/Fonts")
     filename = _FONT_NAME_MAP.get(name.lower())
     if filename:
-        path = font_dir / filename
+        path = _PROJECT_FONTS_DIR / filename
         if path.exists():
             return str(path)
-    # 也尝试将 name 直接作为文件名
-    direct = font_dir / name
+    # 直接将 name 作为文件名尝试
+    direct = _PROJECT_FONTS_DIR / name
     if direct.exists():
         return str(direct)
     # 回退到自动检测
@@ -145,18 +143,17 @@ def resolve_font_path(name: str) -> str:
 
 
 def list_available_fonts() -> dict[str, tuple[str, str]]:
-    """列出当前系统可用的中文字体。
+    """列出项目 fonts/ 中可用的中文字体。
 
     返回: {简称: (完整路径, 中文名)}
     """
-    font_dir = Path("C:/Windows/Fonts")
     # 优先用 README 解析结果（含中文名），回退硬编码
     font_map = _FONT_MAP_DATA if _FONT_MAP_DATA else {
         k: {"filename": v, "name_zh": ""} for k, v in _FONT_NAME_MAP_FALLBACK.items()
     }
     available = {}
     for short_name, info in sorted(font_map.items()):
-        path = font_dir / info["filename"]
+        path = _PROJECT_FONTS_DIR / info["filename"]
         if path.exists():
             available[short_name] = (str(path), info.get("name_zh", ""))
     return available

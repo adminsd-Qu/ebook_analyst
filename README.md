@@ -165,9 +165,14 @@ python scripts\wordcloud_gen.py <book_dir>\data\book.json --mode themes --themes
 
 | 简称 | 字体文件名 | 中文名称 |
 |------|----------|---------|
-| msyhbd | msyhbd.ttc | 微软雅黑粗体 |
-| stkaiti | STKAITI.TTF | 华文楷体 |
-| stzhongs | STZHONGS.TTF | 华文中宋 |
+| msyhbd | 微软雅黑粗体.TTF | 微软雅黑粗体 |
+| stkaiti | 华文楷体.TTF | 华文楷体 |
+| stzhongs | 华文中宋.TTF | 华文中宋 |
+| hanyichengxing | 汉仪程行简.ttf | 汉仪程行简 |
+| hukangxingkai | 华康行楷体 W5.ttf | 华康行楷体 |
+| mengmiao | 三极萌喵简体.ttf | 三极萌喵简体 |
+| xiquemeihua | 喜鹊梅花楷简繁(字跳网络企业版).ttf | 喜鹊梅花楷 |
+| zihunguizhou | 字魂贵州省博物馆联名体.ttf | 字魂贵州省博物馆联名体 |
 
 <!-- font-table-end -->
 
@@ -175,8 +180,9 @@ python scripts\wordcloud_gen.py <book_dir>\data\book.json --mode themes --themes
 # 查看可用字体
 python scripts\wordcloud_gen.py --list-fonts
 
-# 指定字体
+# 指定字体（所有字体统一在项目 ebook_analyst/fonts/ 目录下）
 python scripts\wordcloud_gen.py <book.json> --font stkaiti
+python scripts\wordcloud_gen.py <book.json> --font mengmiao
 ```
 
 ### aggregate_chapter_digests.py

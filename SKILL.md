@@ -9,6 +9,7 @@
 ## 核心规则
 
 **只在阶段 2（逐章深读）结束后暂停一次**，等待用户确认。其余阶段自动推进，不询问。
+**阶段 P（个性化配置）在阶段 0 之前执行**，用选择题形式询问用户对词云的偏好设置。
 
 ### 暂停时的交互逻辑
 
@@ -29,6 +30,7 @@
 
 | 阶段 | 完成后输出 |
 |------|-----------|
+| P — 个性化配置 | 用户选定的字体/配色/标题字号 |
 | 0 — 启动 | 书名/作者/字数/章节数 + 选定的分析维度 |
 | 0.5 — 按章导出 | 导出章节数 / 正文数 / 附录数 |
 | 1 — 机械提取 | 关键词数/高频词数/词云数 |
@@ -37,6 +39,51 @@
 | 5 — 整理成品 | 收集文件数 + deliverables 路径 |
 
 ## 交互式执行流程
+
+### 阶段 P: 个性化配置（在阶段 0 之前执行）
+
+在开始分析之前，**用 `AskUserQuestion` 工具以选择题形式**询问用户的词云个性化偏好。
+**全部用一道多选请求一次性发出三道选择题**（`multiSelect` 开多个问题），用户分别选择后统一收集。
+
+> 💡 **记忆复用**：检查 `memory/` 中是否有之前保存的配置。有则先问"使用上次的配置（xxx）还是重新调整？"
+> 用户选"使用上次"则直接跳过阶段 P，复用记忆。
+> 无记忆时默认值：`mengmiao` / `viridis` / `24`。
+
+#### 问题 1: 字体 `--font`
+
+| 选项 | 值 | 风格描述 |
+|------|----|---------|
+| 🐱 三极萌喵简体（推荐） | `mengmiao` | 圆润萌系，适合轻松读物 |
+| 🖋 华文楷体 | `stkaiti` | 古典优雅，适合文学作品 |
+| ✍️ 华康行楷体 | `hukangxingkai` | 手写质感，文艺风格 |
+| 📐 微软雅黑粗体 | `msyhbd` | 现代清晰，通用保险 |
+
+用户选"其他"时可手动输入其余字体简称（hanyichengxing / xiquemeihua / zihunguizhou / stzhongs）。
+
+#### 问题 2: 配色 `--colormap`
+
+| 选项 | 值 | 效果 |
+|------|----|------|
+| 🌈 viridis（推荐） | `viridis` | 紫蓝绿黄渐变，均衡清晰 |
+| 🔥 plasma | `plasma` | 深紫到橙黄，温暖浓郁 |
+| 🎠 turbo | `turbo` | 彩虹色环，鲜艳高对比 |
+| ❄️ cool | `cool` | 青粉冷色，清凉素雅 |
+
+用户选"其他"时可手动输入其余配色（inferno / magma / cividis / winter / autumn / spring）。
+
+#### 问题 3: 标题字号 `--title-fontsize`
+
+| 选项 | 值 | 说明 |
+|------|----|------|
+| 适中（推荐） | `24` | 默认大小，平衡协调 |
+| 偏大 | `32` | 醒目突出 |
+| 偏小 | `20` | 紧凑精致 |
+| 大号 | `36` | 强烈视觉焦点 |
+
+**记忆持久化**：将用户的选择写入 `memory/`（如 `user-fonts-config.md`），下次调用时优先复用记忆中的配置。
+汇报格式：`已配置 → 字体: {FONT} / 配色: {COLORMAP} / 标题字号: {TITLE_FONTSIZE}`
+
+[自动继续到阶段 0]
 
 ### 阶段 0: 启动（自动）
 ```bash
@@ -79,8 +126,8 @@ print(f'导出 {len(data[\"chapters\"])} 章（正文 {exported} 章，附录 {l
 ### 阶段 1: 机械提取（自动）
 ```bash
 python scripts\keyword_extract.py {book_dir}\data\book.json
-python scripts\wordcloud_gen.py {book_dir}\data\book.json
-python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode chapters
+python scripts\wordcloud_gen.py {book_dir}\data\book.json --max-words 200 --font {FONT} -c {COLORMAP} --title-fontsize {TITLE_FONTSIZE}
+python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode chapters --max-words 150 --font {FONT} -c {COLORMAP} --title-fontsize {TITLE_FONTSIZE}
 ```
 [自动继续到阶段 2]
 
@@ -319,7 +366,7 @@ python scripts\aggregate_chapter_digests.py {book_dir}
 
 ### 阶段 4: 专题词云 + 报告组装（自动）
 ```bash
-python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode themes --themes {book_dir}\data\themes.json
+python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode themes --themes {book_dir}\data\themes.json --font {FONT} -c {COLORMAP} --title-fontsize {TITLE_FONTSIZE}
 python -c "from ebook_analyst.report_builder import build_report; build_report(r'{book_dir}', token_stats=[...])"
 ```
 [自动继续到阶段 5]
@@ -349,11 +396,13 @@ python scripts\collect_deliverables.py {book_dir}
 
 ## 词云个性化
 
-`wordcloud_gen.py` 支持以下参数定制词云外观：
+本次分析已在**阶段 P** 通过 `AskUserQuestion` 选择题式收集偏好。
+
+### CLI 手动调用参考
 
 ```bash
-# 查看可用中文字体
-python scripts\wordcloud_gen.py <book.json> --list-fonts
+# 查看可用中文字体（8 款，全部在 ebook_analyst/fonts/ 目录下）
+python scripts\wordcloud_gen.py --list-fonts
 
 # 切换配色方案 (matplotlib colormap)
 python scripts\wordcloud_gen.py <book.json> --colormap plasma    # 暖色渐变
@@ -362,22 +411,23 @@ python scripts\wordcloud_gen.py <book.json> --colormap cool      # 冷色系
 python scripts\wordcloud_gen.py <book.json> -c viridis           # 默认 (短选项 -c)
 
 # 切换字体
+python scripts\wordcloud_gen.py <book.json> --font mengmiao      # 三极萌喵简体
 python scripts\wordcloud_gen.py <book.json> --font stkaiti       # 华文楷体
+python scripts\wordcloud_gen.py <book.json> --font hukangxingkai # 华康行楷体
 python scripts\wordcloud_gen.py <book.json> --font msyhbd        # 微软雅黑粗体
-python scripts\wordcloud_gen.py <book.json> --font stzhongs      # 华文中宋
 
 # 调整标题字号（默认 24）
 python scripts\wordcloud_gen.py <book.json> --title-fontsize 32
 
 # 组合使用
 python scripts\wordcloud_gen.py <book.json> --mode chapters \
-    --colormap cividis --font stkaiti --title-fontsize 28
+    --colormap plasma --font stkaiti --title-fontsize 28
 ```
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `-c` / `--colormap` | `viridis` | matplotlib 配色：plasma / inferno / magma / turbo / cividis / cool / winter / autumn / spring |
-| `--font` | 自动（微软雅黑粗体） | 字体简称，`--list-fonts` 查看全部可用 |
+| `--font` | `mengmiao`（三极萌喵简体） | 字体简称：msyhbd / stkaiti / stzhongs / mengmiao / hanyichengxing / hukangxingkai / xiquemeihua / zihunguizhou |
 | `--title-fontsize` | `24` | 标题字号（pt） |
 | `--max-words` | `100` | 词云最大词数 |
 
