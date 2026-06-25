@@ -35,6 +35,8 @@ python scripts\keyword_extract.py D:\books\example\data\book.json
 # 4. Generate word clouds
 python scripts\wordcloud_gen.py D:\books\example\data\book.json
 python scripts\wordcloud_gen.py D:\books\example\data\book.json --mode chapters
+# Customize: colormap / font
+python scripts\wordcloud_gen.py D:\books\example\data\book.json --colormap plasma --font simkai
 
 # 5. Launch Claude deep analysis (say in Claude Code)
 #    "Analyze D:\books\example"
@@ -149,6 +151,38 @@ python -c "from ebook_analyst.character_network import generate_character_networ
 ```bash
 python scripts\wordcloud_gen.py D:\books\example\data\book.json --mode themes --themes D:\books\example\data\themes.json
 ```
+
+### Word Cloud Customization
+
+`wordcloud_gen.py` supports the following options to customize colors, fonts, and titles:
+
+```bash
+# List available Chinese fonts
+python scripts\wordcloud_gen.py <book.json> --list-fonts
+
+# Switch color scheme (matplotlib colormap)
+python scripts\wordcloud_gen.py <book.json> --colormap plasma    # warm gradient
+python scripts\wordcloud_gen.py <book.json> -c turbo             # high-contrast rainbow
+python scripts\wordcloud_gen.py <book.json> -c cool              # cool tones
+
+# Switch font
+python scripts\wordcloud_gen.py <book.json> --font simkai        # KaiTi
+python scripts\wordcloud_gen.py <book.json> --font simhei        # HeiTi
+
+# Adjust title font size (default: 24)
+python scripts\wordcloud_gen.py <book.json> --title-fontsize 32
+
+# Combine options
+python scripts\wordcloud_gen.py <book.json> --mode chapters \
+    --colormap cividis --font simkai --title-fontsize 28
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-c` / `--colormap` | `viridis` | plasma / inferno / magma / turbo / cividis / cool / winter / autumn / spring |
+| `--font` | auto (Microsoft YaHei) | `--list-fonts` to see all 15 available (simhei/simkai/simsun/simfang/fzstk etc.) |
+| `--title-fontsize` | `24` | Title font size (pt) |
+| `--max-words` | `100` | Max words in word cloud |
 
 ## Dependencies
 

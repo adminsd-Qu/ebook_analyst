@@ -3,19 +3,50 @@
 基于 jieba 分词，支持整体关键词提取和逐章关键词提取。
 """
 
+import atexit
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Optional
 
 import jieba.analyse
 
-from ebook_analyst.text_processor import segment, segment_with_freq
+from ebook_analyst.text_processor import segment, segment_with_freq, get_stop_words
+
+# jieba.analyse 使用独立的停用词机制，需将我们的停用词表写入临时文件桥接
+_STOP_WORDS_PATH: Optional[str] = None
+
+
+def _init_jieba_stopwords():
+    """将 text_processor 的停用词表桥接到 jieba.analyse。"""
+    global _STOP_WORDS_PATH
+    if _STOP_WORDS_PATH is not None:
+        return  # 已初始化
+    fd, path = tempfile.mkstemp(suffix=".txt", prefix="jieba_stop_")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write("\n".join(sorted(get_stop_words())))
+        f.write("\n")  # jieba 要求每行一个词并以换行结尾
+    jieba.analyse.set_stop_words(path)
+    _STOP_WORDS_PATH = path
+
+
+def _cleanup_stopwords_file():
+    if _STOP_WORDS_PATH and os.path.exists(_STOP_WORDS_PATH):
+        try:
+            os.unlink(_STOP_WORDS_PATH)
+        except OSError:
+            pass
+
+
+atexit.register(_cleanup_stopwords_file)
 
 
 class KeywordExtractor:
     """中文关键词提取器，封装 jieba TF-IDF 和 TextRank。"""
 
     def __init__(self, text: str = "", stop_words: Optional[set[str]] = None):
+        _init_jieba_stopwords()
         self.text = text
         self._stop_words = stop_words or set()
 
@@ -109,6 +140,9 @@ def extract_from_book_json(
     book_json_path = Path(book_json_path)
     with open(book_json_path, "r", encoding="utf-8") as f:
         book_data = json.load(f)
+
+    # 桥接停用词到 jieba.analyse（首次调用初始化）
+    _init_jieba_stopwords()
 
     # 拼接全书文本
     full_text = "\n".join(ch["text"] for ch in book_data["chapters"])

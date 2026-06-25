@@ -11,6 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")  # 非交互式后端
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 from wordcloud import WordCloud
 
 from ebook_analyst.text_processor import segment
@@ -21,12 +22,21 @@ def _find_chinese_font() -> str:
     # Windows 字体路径和优先级
     font_dir = Path("C:/Windows/Fonts")
     candidates = [
-        font_dir / "msyh.ttc",  # 微软雅黑
-        font_dir / "msyhbd.ttc",  # 微软雅黑粗体
-        font_dir / "simhei.ttf",  # 黑体
-        font_dir / "simsun.ttc",  # 宋体
-        font_dir / "simkai.ttf",  # 楷体
-        font_dir / "STSONG.TTF",  # 华文宋体
+        font_dir / "msyh.ttc",      # 微软雅黑
+        font_dir / "msyhbd.ttc",    # 微软雅黑粗体
+        font_dir / "msyhl.ttc",     # 微软雅黑 Light
+        font_dir / "simhei.ttf",    # 黑体
+        font_dir / "simsun.ttc",    # 宋体
+        font_dir / "simkai.ttf",    # 楷体
+        font_dir / "simfang.ttf",   # 仿宋
+        font_dir / "simsunb.ttf",   # 宋体 Bold
+        font_dir / "STSONG.TTF",    # 华文宋体
+        font_dir / "STKAITI.TTF",   # 华文楷体
+        font_dir / "STFANGSO.TTF",  # 华文仿宋
+        font_dir / "STXIHEI.TTF",   # 华文细黑
+        font_dir / "STZHONGS.TTF",  # 华文中宋
+        font_dir / "FZSTK.TTF",     # 方正书体楷
+        font_dir / "FZYTK.TTF",     # 方正硬体楷
     ]
 
     for font_path in candidates:
@@ -58,6 +68,61 @@ def get_font_path() -> str:
     return _FONT_PATH
 
 
+# 字体简称 → 文件名映射（供 CLI --font 使用）
+_FONT_NAME_MAP = {
+    "msyh":      "msyh.ttc",
+    "msyhbd":    "msyhbd.ttc",
+    "msyhl":     "msyhl.ttc",
+    "simhei":    "simhei.ttf",
+    "simsun":    "simsun.ttc",
+    "simkai":    "simkai.ttf",
+    "simfang":   "simfang.ttf",
+    "simsunb":   "simsunb.ttf",
+    "stsong":    "STSONG.TTF",
+    "stkaiti":   "STKAITI.TTF",
+    "stfangso":  "STFANGSO.TTF",
+    "stxihei":   "STXIHEI.TTF",
+    "stzhongs":  "STZHONGS.TTF",
+    "fzstk":     "FZSTK.TTF",
+    "fzytk":     "FZYTK.TTF",
+}
+
+
+def resolve_font_path(name: str) -> str:
+    """根据字体简称解析为完整路径。
+
+    参数:
+        name: 字体简称（如 "msyh", "simhei", "simkai"）
+
+    返回:
+        字体文件的绝对路径，找不到时回退到默认字体
+    """
+    font_dir = Path("C:/Windows/Fonts")
+    filename = _FONT_NAME_MAP.get(name.lower())
+    if filename:
+        path = font_dir / filename
+        if path.exists():
+            return str(path)
+    # 也尝试将 name 直接作为文件名
+    direct = font_dir / name
+    if direct.exists():
+        return str(direct)
+    # 回退到自动检测
+    print(f"警告: 字体 '{name}' 未找到，使用默认字体")
+    return get_font_path()
+
+
+def list_available_fonts() -> dict[str, str]:
+    """列出当前系统可用的中文字体简称及路径。"""
+    font_dir = Path("C:/Windows/Fonts")
+    available = {}
+    for short_name, filename in sorted(_FONT_NAME_MAP.items()):
+        path = font_dir / filename
+        if path.exists():
+            available[short_name] = str(path)
+    return available
+
+
 class WordcloudMaker:
     """中文词云生成器。
 
@@ -81,12 +146,13 @@ class WordcloudMaker:
         self,
         text: str,
         output_path: str | Path,
-        width: int = 800,
-        height: int = 600,
-        max_words: int = 200,
+        width: int = 1200,
+        height: int = 800,
+        max_words: int = 100,
         background_color: str = "white",
         colormap: str = "viridis",
         title: Optional[str] = None,
+        title_fontsize: int = 24,
     ) -> Path:
         """从文本生成词云图片。
 
@@ -96,8 +162,9 @@ class WordcloudMaker:
             width, height: 图片尺寸
             max_words: 最大词数
             background_color: 背景色
-            colormap: 颜色映射
+            colormap: 颜色映射（matplotlib colormap 名称，如 viridis/plasma/inferno/turbo/cool/winter）
             title: 可选的图片标题
+            title_fontsize: 标题字号（默认 24）
 
         返回:
             输出文件路径
@@ -117,8 +184,12 @@ class WordcloudMaker:
             max_words=max_words,
             background_color=background_color,
             colormap=colormap,
-            max_font_size=120,
-            min_font_size=10,
+            max_font_size=160,
+            min_font_size=16,
+            prefer_horizontal=0.85,
+            margin=8,
+            relative_scaling=0.5,
+            collocations=False,
             random_state=42,
         )
         wc.generate(word_text)
@@ -128,15 +199,16 @@ class WordcloudMaker:
         ax.imshow(wc, interpolation="bilinear")
         ax.axis("off")
         if title:
-            ax.set_title(title, fontsize=16, fontproperties="SimHei", pad=10)
+            title_font = FontProperties(fname=self.font_path, size=title_fontsize)
+            ax.set_title(title, fontproperties=title_font, pad=14)
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(
             str(output_path),
             bbox_inches="tight",
-            pad_inches=0.1,
-            dpi=100,
+            pad_inches=0.2,
+            dpi=150,
             facecolor=background_color,
         )
         plt.close(fig)
@@ -207,17 +279,31 @@ class WordcloudMaker:
         themes = themes_data.get("themes", [])
         for theme in themes:
             theme_name = theme["name"]
-            # 收集该主题关联章节的文本
-            indices = theme.get("chapter_indices", [])
-            if not indices:
-                # 如果没有指定，使用所有章节
-                theme_text = "\n".join(ch["text"] for ch in chapters)
-            else:
-                theme_text = "\n".join(
-                    ch["text"]
-                    for ch in chapters
-                    if ch["index"] in indices
-                )
+            # 用主题自身的元文本（引文 + 定义 + 发展脉络）作为词云文本源，
+            # 确保不同主题的词云内容有实质性差异
+            parts = []
+            quotes = theme.get("representative_quotes", [])
+            if quotes:
+                parts.extend(quotes)
+            definition = theme.get("definition", "")
+            if definition:
+                parts.append(definition)
+            development = theme.get("development", "")
+            if development:
+                parts.append(development)
+            theme_text = "\n".join(parts)
+
+            # 元文本过短时（极端情况），回退到关联章节全文
+            if len(theme_text) < 200:
+                indices = theme.get("chapter_indices", [])
+                if not indices:
+                    theme_text = "\n".join(ch["text"] for ch in chapters)
+                else:
+                    theme_text = "\n".join(
+                        ch["text"]
+                        for ch in chapters
+                        if ch["index"] in indices
+                    )
 
             safe_name = theme_name.replace("/", "_").replace(" ", "_")
             path = output_dir / f"wordcloud_topic_{safe_name}.png"

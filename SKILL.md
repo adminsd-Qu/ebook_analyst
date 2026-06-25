@@ -79,8 +79,8 @@ print(f'导出 {len(data[\"chapters\"])} 章（正文 {exported} 章，附录 {l
 ### 阶段 1: 机械提取（自动）
 ```bash
 python scripts\keyword_extract.py {book_dir}\data\book.json
-python scripts\wordcloud_gen.py {book_dir}\data\book.json --max-words 200
-python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode chapters --max-words 150
+python scripts\wordcloud_gen.py {book_dir}\data\book.json
+python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode chapters
 ```
 [自动继续到阶段 2]
 
@@ -346,6 +346,40 @@ python scripts\collect_deliverables.py {book_dir}
 - 同类作品对比
 - 语言风格量化分析（句长分布、对话密度等）
 - 情感曲线绘制（逐章情感极性变化）
+
+## 词云个性化
+
+`wordcloud_gen.py` 支持以下参数定制词云外观：
+
+```bash
+# 查看可用中文字体
+python scripts\wordcloud_gen.py <book.json> --list-fonts
+
+# 切换配色方案 (matplotlib colormap)
+python scripts\wordcloud_gen.py <book.json> --colormap plasma    # 暖色渐变
+python scripts\wordcloud_gen.py <book.json> --colormap turbo     # 高对比彩虹
+python scripts\wordcloud_gen.py <book.json> --colormap cool      # 冷色系
+python scripts\wordcloud_gen.py <book.json> -c viridis           # 默认 (短选项 -c)
+
+# 切换字体
+python scripts\wordcloud_gen.py <book.json> --font simkai        # 楷体
+python scripts\wordcloud_gen.py <book.json> --font simhei        # 黑体
+python scripts\wordcloud_gen.py <book.json> --font fzstk         # 方正书体楷
+
+# 调整标题字号（默认 24）
+python scripts\wordcloud_gen.py <book.json> --title-fontsize 32
+
+# 组合使用
+python scripts\wordcloud_gen.py <book.json> --mode chapters \
+    --colormap cividis --font simkai --title-fontsize 28
+```
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-c` / `--colormap` | `viridis` | matplotlib 配色：plasma / inferno / magma / turbo / cividis / cool / winter / autumn / spring |
+| `--font` | 自动（微软雅黑） | 字体简称，`--list-fonts` 查看全部可用 |
+| `--title-fontsize` | `24` | 标题字号（pt） |
+| `--max-words` | `100` | 词云最大词数 |
 
 ## 报告格式
 

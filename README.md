@@ -36,9 +36,13 @@ python scripts\keyword_extract.py D:\books\山河纪事\data\book.json
 
 # 4. 生成词云
 python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json
+#                                 ^^^^^^^^^^^^^^^^^
+#                           这是上一条指令创建的输出文件夹的路径，后面添加"\data\book.json"
 python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json --mode chapters
 #                                 ^^^^^^^^^^^^^^^^^
 #                                       同上
+# 个性化：切换配色/字体
+python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json --colormap plasma --font simkai
 
 # 5. 启动 Claude 深度分析（在 Claude Code 中说）
 #    "分析 D:\books\山河纪事"
@@ -156,6 +160,38 @@ python -c "from ebook_analyst.character_network import generate_character_networ
 ```bash
 python scripts\wordcloud_gen.py D:\books\山河纪事\data\book.json --mode themes --themes D:\books\山河纪事\data\themes.json
 ```
+
+### 词云个性化
+
+`wordcloud_gen.py` 支持以下参数定制词云配色、字体和标题：
+
+```bash
+# 查看可用中文字体
+python scripts\wordcloud_gen.py <book.json> --list-fonts
+
+# 切换配色 (matplotlib colormap)
+python scripts\wordcloud_gen.py <book.json> --colormap plasma    # 暖色渐变
+python scripts\wordcloud_gen.py <book.json> -c turbo             # 高对比彩虹
+python scripts\wordcloud_gen.py <book.json> -c cool              # 冷色系
+
+# 切换字体
+python scripts\wordcloud_gen.py <book.json> --font simkai        # 楷体
+python scripts\wordcloud_gen.py <book.json> --font simhei        # 黑体
+
+# 调整标题字号（默认 24）
+python scripts\wordcloud_gen.py <book.json> --title-fontsize 32
+
+# 组合使用
+python scripts\wordcloud_gen.py <book.json> --mode chapters \
+    --colormap cividis --font simkai --title-fontsize 28
+```
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-c` / `--colormap` | `viridis` | plasma / inferno / magma / turbo / cividis / cool / winter / autumn / spring |
+| `--font` | 自动（微软雅黑） | `--list-fonts` 查看全部（simhei/simkai/simsun/simfang/fzstk 等 15 种） |
+| `--title-fontsize` | `24` | 标题字号（pt） |
+| `--max-words` | `100` | 词云最大词数 |
 
 ## 依赖
 
