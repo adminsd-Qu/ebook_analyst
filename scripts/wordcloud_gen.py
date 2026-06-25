@@ -5,8 +5,8 @@
     python scripts/wordcloud_gen.py <book.json>
     python scripts/wordcloud_gen.py <book.json> --mode chapters
     python scripts/wordcloud_gen.py <book.json> --mode themes --themes themes.json
-    python scripts/wordcloud_gen.py <book.json> --colormap plasma --font simkai
-    python scripts/wordcloud_gen.py <book.json> --list-fonts
+    python scripts/wordcloud_gen.py <book.json> --colormap plasma --font stkaiti
+    python scripts/wordcloud_gen.py --list-fonts
 """
 
 import sys
@@ -24,7 +24,7 @@ def main():
         description="从 book.json 生成词云图"
     )
     parser.add_argument(
-        "book_json", type=str, help="book.json 文件路径"
+        "book_json", type=str, nargs="?", help="book.json 文件路径（--list-fonts 时可选）"
     )
     parser.add_argument(
         "--mode",
@@ -55,7 +55,7 @@ def main():
         "--font",
         type=str,
         default=None,
-        help="中文字体简称 (默认: msyh；可选: simhei/simkai/simsun/simfang/fzstk 等；--list-fonts 查看全部)",
+        help="中文字体简称 (默认: msyhbd；可选: msyhbd / stkaiti / stzhongs；--list-fonts 查看全部)",
     )
     parser.add_argument(
         "--title-fontsize",
@@ -77,18 +77,22 @@ def main():
         list_available_fonts,
     )
 
-    # --list-fonts：列出可用字体后退出
+    # --list-fonts：列出可用字体后退出（无需 book_json）
     if args.list_fonts:
         available = list_available_fonts()
         if not available:
             print("未检测到可用中文字体")
         else:
             print("可用的中文字体 (--font 参数值):")
-            print(f"  {'简称':<12} 路径")
-            print(f"  {'-'*10}  {'-'*40}")
-            for name, path in available.items():
-                print(f"  {name:<12} {path}")
+            print(f"  {'简称':<12} {'中文名':<16} 路径")
+            print(f"  {'-'*10}  {'-'*14}  {'-'*40}")
+            for name, (path, name_zh) in available.items():
+                print(f"  {name:<12} {name_zh:<16} {path}")
         return
+
+    if not args.book_json:
+        print("错误: 请指定 book.json 文件路径", file=sys.stderr)
+        sys.exit(1)
 
     book_path = Path(args.book_json)
     if not book_path.exists():

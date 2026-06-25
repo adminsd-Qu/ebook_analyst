@@ -27,14 +27,6 @@ _STOP_WORDS = set(
 _PUNCTUATION = set("，。！？、；：""''（）【】《》…—·～　 \t\n\r")
 
 
-def clean_text(text: str) -> str:
-    """清洗文本：去除多余空白、规范化标点。"""
-    text = re.sub(r"[\s]+", " ", text)
-    text = re.sub(r"[_]{3,}", "", text)
-    text = re.sub(r"[*]{3,}", "", text)
-    return text.strip()
-
-
 def segment(text: str, remove_stopwords: bool = True) -> list[str]:
     """使用 jieba 对中文文本分词。
 

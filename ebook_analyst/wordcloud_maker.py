@@ -22,21 +22,9 @@ def _find_chinese_font() -> str:
     # Windows 字体路径和优先级
     font_dir = Path("C:/Windows/Fonts")
     candidates = [
-        font_dir / "msyh.ttc",      # 微软雅黑
         font_dir / "msyhbd.ttc",    # 微软雅黑粗体
-        font_dir / "msyhl.ttc",     # 微软雅黑 Light
-        font_dir / "simhei.ttf",    # 黑体
-        font_dir / "simsun.ttc",    # 宋体
-        font_dir / "simkai.ttf",    # 楷体
-        font_dir / "simfang.ttf",   # 仿宋
-        font_dir / "simsunb.ttf",   # 宋体 Bold
-        font_dir / "STSONG.TTF",    # 华文宋体
         font_dir / "STKAITI.TTF",   # 华文楷体
-        font_dir / "STFANGSO.TTF",  # 华文仿宋
-        font_dir / "STXIHEI.TTF",   # 华文细黑
         font_dir / "STZHONGS.TTF",  # 华文中宋
-        font_dir / "FZSTK.TTF",     # 方正书体楷
-        font_dir / "FZYTK.TTF",     # 方正硬体楷
     ]
 
     for font_path in candidates:
@@ -53,8 +41,9 @@ def _find_chinese_font() -> str:
         ):
             return f.fname
 
-    # 最终回退：使用 matplotlib 默认字体（可能无法显示中文）
-    return str(font_dir / "msyh.ttc")  # 假设存在
+    # 最终回退
+    print("警告: 未找到任何中文字体，词云可能无法正常显示中文。")
+    return str(font_dir / "msyhbd.ttc")
 
 
 _FONT_PATH: Optional[str] = None
@@ -68,31 +57,74 @@ def get_font_path() -> str:
     return _FONT_PATH
 
 
-# 字体简称 → 文件名映射（供 CLI --font 使用）
-_FONT_NAME_MAP = {
-    "msyh":      "msyh.ttc",
+# 字体简称 → 文件名映射（优先从 README.md 解析，失败时回退硬编码）
+def _load_font_map() -> dict[str, dict[str, str]]:
+    """从 README.md 解析字体映射表。
+
+    返回: {简称: {"filename": 文件名, "name_zh": 中文名}}
+    解析失败时返回空 dict，调用方回退到硬编码默认值。
+    """
+    readme_path = Path(__file__).resolve().parent.parent / "README.md"
+    if not readme_path.exists():
+        return {}
+
+    try:
+        content = readme_path.read_text(encoding="utf-8")
+    except Exception:
+        return {}
+
+    font_map = {}
+    in_table = False
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("<!-- font-table-start"):
+            in_table = True
+            continue
+        if stripped.startswith("<!-- font-table-end"):
+            break
+
+        if not in_table:
+            continue
+
+        # 跳过表头和分隔行
+        if "简称" in stripped or stripped.startswith("|---") or stripped.startswith("|--"):
+            continue
+
+        # 解析: | 简称 | 文件名 | 中文名 |
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) >= 4:
+            short_name = parts[1]
+            filename = parts[2]
+            name_zh = parts[3]
+            if short_name and filename:
+                font_map[short_name] = {"filename": filename, "name_zh": name_zh}
+
+    return font_map
+
+
+_FONT_NAME_MAP_FALLBACK = {
     "msyhbd":    "msyhbd.ttc",
-    "msyhl":     "msyhl.ttc",
-    "simhei":    "simhei.ttf",
-    "simsun":    "simsun.ttc",
-    "simkai":    "simkai.ttf",
-    "simfang":   "simfang.ttf",
-    "simsunb":   "simsunb.ttf",
-    "stsong":    "STSONG.TTF",
     "stkaiti":   "STKAITI.TTF",
-    "stfangso":  "STFANGSO.TTF",
-    "stxihei":   "STXIHEI.TTF",
     "stzhongs":  "STZHONGS.TTF",
-    "fzstk":     "FZSTK.TTF",
-    "fzytk":     "FZYTK.TTF",
 }
+
+# 字体完整信息（优先从 README 解析，回退硬编码）
+_FONT_MAP_DATA = _load_font_map()
+
+# 简称 → 文件名映射
+_FONT_NAME_MAP: dict[str, str] = (
+    {k: v["filename"] for k, v in _FONT_MAP_DATA.items()}
+    if _FONT_MAP_DATA
+    else _FONT_NAME_MAP_FALLBACK
+)
 
 
 def resolve_font_path(name: str) -> str:
     """根据字体简称解析为完整路径。
 
     参数:
-        name: 字体简称（如 "msyh", "simhei", "simkai"）
+        name: 字体简称（如 "msyhbd", "stkaiti", "stzhongs"）
 
     返回:
         字体文件的绝对路径，找不到时回退到默认字体
@@ -112,14 +144,21 @@ def resolve_font_path(name: str) -> str:
     return get_font_path()
 
 
-def list_available_fonts() -> dict[str, str]:
-    """列出当前系统可用的中文字体简称及路径。"""
+def list_available_fonts() -> dict[str, tuple[str, str]]:
+    """列出当前系统可用的中文字体。
+
+    返回: {简称: (完整路径, 中文名)}
+    """
     font_dir = Path("C:/Windows/Fonts")
+    # 优先用 README 解析结果（含中文名），回退硬编码
+    font_map = _FONT_MAP_DATA if _FONT_MAP_DATA else {
+        k: {"filename": v, "name_zh": ""} for k, v in _FONT_NAME_MAP_FALLBACK.items()
+    }
     available = {}
-    for short_name, filename in sorted(_FONT_NAME_MAP.items()):
-        path = font_dir / filename
+    for short_name, info in sorted(font_map.items()):
+        path = font_dir / info["filename"]
         if path.exists():
-            available[short_name] = str(path)
+            available[short_name] = (str(path), info.get("name_zh", ""))
     return available
 
 

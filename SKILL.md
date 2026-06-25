@@ -362,22 +362,22 @@ python scripts\wordcloud_gen.py <book.json> --colormap cool      # 冷色系
 python scripts\wordcloud_gen.py <book.json> -c viridis           # 默认 (短选项 -c)
 
 # 切换字体
-python scripts\wordcloud_gen.py <book.json> --font simkai        # 楷体
-python scripts\wordcloud_gen.py <book.json> --font simhei        # 黑体
-python scripts\wordcloud_gen.py <book.json> --font fzstk         # 方正书体楷
+python scripts\wordcloud_gen.py <book.json> --font stkaiti       # 华文楷体
+python scripts\wordcloud_gen.py <book.json> --font msyhbd        # 微软雅黑粗体
+python scripts\wordcloud_gen.py <book.json> --font stzhongs      # 华文中宋
 
 # 调整标题字号（默认 24）
 python scripts\wordcloud_gen.py <book.json> --title-fontsize 32
 
 # 组合使用
 python scripts\wordcloud_gen.py <book.json> --mode chapters \
-    --colormap cividis --font simkai --title-fontsize 28
+    --colormap cividis --font stkaiti --title-fontsize 28
 ```
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `-c` / `--colormap` | `viridis` | matplotlib 配色：plasma / inferno / magma / turbo / cividis / cool / winter / autumn / spring |
-| `--font` | 自动（微软雅黑） | 字体简称，`--list-fonts` 查看全部可用 |
+| `--font` | 自动（微软雅黑粗体） | 字体简称，`--list-fonts` 查看全部可用 |
 | `--title-fontsize` | `24` | 标题字号（pt） |
 | `--max-words` | `100` | 词云最大词数 |
 

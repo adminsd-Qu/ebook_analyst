@@ -64,10 +64,10 @@ python scripts\collect_deliverables.py <book_dir>
 
 ## Module quick reference
 
-- **epub_reader**: ebooklib + BS4, auto chapter title detection, suppresses XML warnings, skips <1000 char front matter
+- **epub_reader**: ebooklib + BS4, auto chapter title detection, suppresses XML warnings
 - **text_processor**: jieba exact mode, ~80 hardcoded stopwords, filters punctuation/numbers/single-char
 - **keyword_extractor**: TF-IDF + TextRank dual mode, `extract_from_book_json()` is main entry
-- **wordcloud_maker**: Chinese font auto-detect chain (msyh→simhei→simsun→...), matplotlib Agg backend, `char_count < 1000` chapter filter
+- **wordcloud_maker**: Chinese font auto-detect chain (msyhbd→stkaiti→stzhongs), matplotlib Agg backend, `char_count < 1000` chapter filter
 - **report_builder**: `build_report(output_dir, token_stats)`, `_load_json` returns `{}` on missing files, token stats passed in not read from file
 - **character_network**: paragraph-level co-occurrence, spring_layout seed=42, min_edge_weight default 3
 - **json_to_md**: `convert_all(data_dir)` batch converts JSON analysis to standalone .md
