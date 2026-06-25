@@ -14,6 +14,11 @@ scripts/ (CLI) → ebook_analyst/ (library) → <epub_dir>/<book>/ (artifacts + 
 - **`scripts/`**: CLI entry points. Each starts with `sys.path.insert(0, _PROJECT_ROOT)` so they can import `ebook_analyst` without `pip install`.
 - **`<epub_dir>/<book>/`**: output directory. Defaults to EPUB 文件所在目录下的 `<书名>/` 子目录。
 
+## 临时调试文件
+
+所有即时调试/诊断产生的临时文件（如查看数据结构的中间文件），统一输出到 **`<epub_dir>/_claude_cache/`** 目录，**禁止在项目根目录创建**。
+该目录已在 `.gitignore` 中忽略，不会提交到版本控制。
+
 ## 数据流与中间格式
 
 1. parse_epub.py → book.json
@@ -56,6 +61,7 @@ All commands and the interactive analysis workflow are in SKILL.md. Quick refere
 ```bash
 pip install -r requirements.txt
 python scripts\parse_epub.py <file.epub>                         # 输出到 EPUB 同目录
+python scripts\parse_epub.py <file.epub> --min-chars 1000        # 跳过作者简介等短章节
 python scripts\keyword_extract.py <book_dir>\data\book.json
 python scripts\wordcloud_gen.py <book_dir>\data\book.json [--mode chapters|themes]
 python scripts\aggregate_chapter_digests.py <book_dir>           # 聚合逐章摘要为合集 JSON
@@ -66,7 +72,9 @@ python scripts\collect_deliverables.py <book_dir>
 
 - **epub_reader**: ebooklib + BS4, auto chapter title detection, suppresses XML warnings
 - **text_processor**: jieba exact mode, ~80 hardcoded stopwords, filters punctuation/numbers/single-char
-- **keyword_extractor**: TF-IDF + TextRank dual mode, `extract_from_book_json()` is main entry
+- **keyword_extractor**: TF-IDF + TextRank 双权重提取，`extract_from_book_json()` 主入口。
+  `keywords.json` 输出结构：`overall_keywords`（每条含 `word`/`tfidf_weight`/`textrank_weight`）、
+  `top_frequent_words`（词频字典）、`chapter_keywords`（每章 Top 关键词列表）。
 - **wordcloud_maker**: Chinese font auto-detect chain (msyhbd→stkaiti→stzhongs), matplotlib Agg backend, `char_count < 1000` chapter filter
 - **report_builder**: `build_report(output_dir, token_stats)`, `_load_json` returns `{}` on missing files, token stats passed in not read from file
 - **character_network**: paragraph-level co-occurrence, spring_layout seed=42, min_edge_weight default 3

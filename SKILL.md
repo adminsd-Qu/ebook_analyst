@@ -11,6 +11,18 @@
 **只在阶段 2（逐章深读）结束后暂停一次**，等待用户确认。其余阶段自动推进，不询问。
 **阶段 P（个性化配置）在阶段 0 之前执行**，用选择题形式询问用户对词云的偏好设置。
 
+### 临时文件规则
+
+任何调试、诊断或中间缓存文件（如查看数据结构的临时输出），统一写入 `_claude_cache/` 目录（位于 `.epub` 文件所在目录），**严禁写入项目根目录**。
+
+```bash
+# ✅ 正确：写入 _claude_cache/
+python -c "..." > <epub_dir>/_claude_cache/debug_output.txt
+
+# ❌ 禁止：写入项目根目录
+python -c "..." > 项目目录/debug_output.txt
+```
+
 ### 暂停时的交互逻辑
 
 逐章深读全部完成后，输出完整成果汇报 + 主动分析建议：
@@ -88,6 +100,7 @@
 ### 阶段 0: 启动（自动）
 ```bash
 python scripts\parse_epub.py <epub_file>
+python scripts\parse_epub.py <epub_file> --min-chars 1000   # 跳过作者简介等短章节
 ```
 阅读 book.json，判断书籍类型，从分析清单选择适用维度。
 [自动继续到阶段 0.5]
@@ -164,6 +177,10 @@ python scripts\wordcloud_gen.py {book_dir}\data\book.json --mode chapters --max-
 #### 步骤 2.2: 读取输入
 
 - `Read data/ch_N.txt`（本章全文。N 为 `chapter_index`，零基）
+- ⚠️ **大章分块**：Read 工具有 25K token 上限，中文约 8K-10K 字即可能超限。
+  估算公式：`上限字数 ≈ 25000 / (本书平均 tokens/字)`，一般约 6000-8000 字/次。
+  初次读取建议 `limit=150`，如超限则逐步减少。
+  读完一块后继续 `offset=150` 再读下一块，直至读完。
 - 参考 `data/keywords.json` 中 `chapter_keywords[N]` 获取本章 Top 关键词
 
 #### 步骤 2.3: 生成独立分析报告

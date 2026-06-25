@@ -10,6 +10,11 @@
 """
 
 import sys
+
+# 强制使用 UTF-8 输出，避免 Windows 终端 GBK 编码导致中文乱码
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent

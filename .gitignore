@@ -1,6 +1,9 @@
 # EPUB 解析临时文件
 temp/
 
+# 调试缓存（位于 .epub 文件同目录下的 _claude_cache/）
+_claude_cache/
+
 # Python
 __pycache__/
 *.pyc

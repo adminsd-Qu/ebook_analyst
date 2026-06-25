@@ -10,6 +10,11 @@
 """
 
 import sys
+
+# 强制使用 UTF-8 输出，避免 Windows 终端 GBK 编码导致中文乱码
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from pathlib import Path
 
 # 将项目根目录加入 Python 路径
@@ -34,6 +39,12 @@ def main():
         default=None,
         help="输出目录 (默认: EPUB 同目录下的 <书名>/)",
     )
+    parser.add_argument(
+        "--min-chars",
+        type=int,
+        default=0,
+        help="最小章节字数，低于此字数的章节将被跳过 (默认: 0，推荐: 1000 可过滤前言/作者简介等)",
+    )
     args = parser.parse_args()
 
     # 延迟导入，让 argparse 错误更快
@@ -48,6 +59,18 @@ def main():
 
     reader = EpubReader(epub_path)
     data = reader.extract_all()
+
+    # 跳过过短的元数据章节（如作者简介、前言等）
+    if args.min_chars > 0 and "chapters" in data:
+        before = len(data["chapters"])
+        data["chapters"] = [
+            ch for ch in data["chapters"]
+            if ch.get("char_count", 0) >= args.min_chars
+        ]
+        skipped = before - len(data["chapters"])
+        data["chapter_count"] = len(data["chapters"])
+        if skipped:
+            print(f"过滤: 跳过了 {skipped} 个短章节 (<{args.min_chars}字)")
 
     # 确定输出路径 (默认: EPUB 同目录)
     if args.output:

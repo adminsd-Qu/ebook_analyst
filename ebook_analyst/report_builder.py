@@ -258,27 +258,38 @@ def build_report(
     # 8. Token 消耗统计
     # ============================================================
     if token_stats:
-        lines.append("---")
-        lines.append("## 分析成本")
-        lines.append("")
-        lines.append("| 阶段 | 输入 Token | 输出 Token | 合计 |")
-        lines.append("|------|-----------|-----------|------|")
-        total_input = 0
-        total_output = 0
-        for ts in token_stats:
-            stage = ts.get("stage", "未知")
-            inp = ts.get("input", 0)
-            out = ts.get("output", 0)
-            total_input += inp
-            total_output += out
-            lines.append(f"| {stage} | {inp:,} | {out:,} | {inp + out:,} |")
+        # 类型校验：必须是 list[dict]，每个元素需含 stage/input/output
+        if not isinstance(token_stats, list) or not all(
+            isinstance(ts, dict) and {"stage", "input", "output"}.issubset(ts)
+            for ts in token_stats
+        ):
+            print(
+                "[build_report] ⚠️ token_stats 类型错误：预期 "
+                f"list[dict]（每条含 stage/input/output），"
+                f"实际收到 {type(token_stats).__name__}"
+            )
+        else:
+            lines.append("---")
+            lines.append("## 分析成本")
+            lines.append("")
+            lines.append("| 阶段 | 输入 Token | 输出 Token | 合计 |")
+            lines.append("|------|-----------|-----------|------|")
+            total_input = 0
+            total_output = 0
+            for ts in token_stats:
+                stage = ts.get("stage", "未知")
+                inp = ts.get("input", 0)
+                out = ts.get("output", 0)
+                total_input += inp
+                total_output += out
+                lines.append(f"| {stage} | {inp:,} | {out:,} | {inp + out:,} |")
 
-        lines.append(
-            f"| **总计** | **{total_input:,}** | **{total_output:,}** | "
-            f"**{total_input + total_output:,}** |"
-        )
-        lines.append("")
-        lines.append(f"*注: 以上仅统计 Claude API 调用消耗的 Token，不包含 Python 脚本运行成本。*")
+            lines.append(
+                f"| **总计** | **{total_input:,}** | **{total_output:,}** | "
+                f"**{total_input + total_output:,}** |"
+            )
+            lines.append("")
+            lines.append(f"*注: 以上仅统计 Claude API 调用消耗的 Token，不包含 Python 脚本运行成本。*")
 
     # ============================================================
     # 写入文件
@@ -286,7 +297,42 @@ def build_report(
     report_path = output_dir / "report.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
 
+    # 后置校验：检查关键内容块是否为空
+    _validate_report(lines, report_path)
+
     return report_path
+
+
+def _validate_report(lines: list[str], report_path: Path) -> None:
+    """校验报告关键区域是否包含有效内容，打印警告。"""
+    section_checks = {
+        "逐章详解": ("## 逐章详解", "**情节概要**"),
+        "主题分析": ("## 主题分析", "### 主题:"),
+        "专题总结": ("## 专题总结", "### "),
+    }
+    issues = []
+    for section_name, (header_mark, content_mark) in section_checks.items():
+        in_section = False
+        has_content = False
+        for line in lines:
+            if header_mark in line:
+                in_section = True
+                continue
+            if in_section and line.startswith("## ") and header_mark not in line:
+                break  # 进入下一节
+            if in_section and content_mark in line:
+                has_content = True
+                break
+        if not has_content:
+            issues.append(section_name)
+
+    if issues:
+        print(
+            f"[报告校验] ⚠️  以下区域内容为空：{', '.join(issues)}。"
+            f"可能原因：源数据缺失或 digest 格式不匹配。"
+        )
+    else:
+        print(f"[报告校验] ✅ 所有关键内容块均非空")
 
 
 def _load_json(path: Path) -> dict:
